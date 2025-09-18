@@ -94,14 +94,17 @@ class SupabaseClient {
     console.log('2. Enable Google provider in Authentication → Providers');
     console.log('3. Add your Google Client ID and Client Secret');
     
+    // Create a premium test user
     const mockUser = {
       id: 'test-user-' + Date.now(),
-      email: 'test@example.com',
+      email: 'poricfami@gmail.com', // Use the premium email for testing
       user_metadata: {
         full_name: 'Fahmi',
         avatar_url: null
       }
     };
+    
+    console.log('✅ Created premium test user:', mockUser.email);
     
     return {
       user: mockUser,
@@ -166,22 +169,37 @@ class SupabaseClient {
 
   // Check if a specific user should be premium (for demo purposes)
   isPremiumUser(user) {
+    console.log('🔍 DEBUG: Checking premium status for user:', user);
+    console.log('📧 User email:', user.email);
+    console.log('📧 Email type:', typeof user.email);
+    
     // Make specific users premium for demo
     const premiumUsers = [
       'poricfami@gmail.com', // Premium user
     ];
+    
+    console.log('👑 Premium users list:', premiumUsers);
     
     // Also check for premium tags in user metadata
     const hasPremiumTag = user.user_metadata?.tags?.includes('premium') || 
                          user.user_metadata?.subscription?.tier === 'premium' ||
                          user.user_metadata?.isPremium === true;
     
-    return premiumUsers.includes(user.email.toLowerCase()) || hasPremiumTag;
+    const emailMatch = premiumUsers.includes(user.email.toLowerCase());
+    const isPremium = emailMatch || hasPremiumTag;
+    
+    console.log('🔍 Email match:', emailMatch);
+    console.log('🏷️ Has premium tag:', hasPremiumTag);
+    console.log('✅ Final premium status:', isPremium);
+    
+    return isPremium;
   }
 
   // Enhanced user data with professional labels
   async createUserProfile(user, session) {
+    console.log('🏗️ Creating user profile for:', user.email);
     const isPremium = this.isPremiumUser(user);
+    console.log('👑 User profile premium status:', isPremium);
     
     return {
       id: user.id,
@@ -233,6 +251,24 @@ class SupabaseClient {
 
 // Create and export the client
 const supabase = new SupabaseClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Test function to debug premium detection
+window.testPremiumDetection = function(email = 'poricfami@gmail.com') {
+  console.log('🧪 Testing premium detection for:', email);
+  
+  const testUser = {
+    id: 'test-123',
+    email: email,
+    user_metadata: {
+      full_name: 'Test User'
+    }
+  };
+  
+  const isPremium = supabase.isPremiumUser(testUser);
+  console.log('✅ Result:', isPremium);
+  
+  return isPremium;
+};
 
 // Export for use in other files
 if (typeof module !== 'undefined' && module.exports) {

@@ -1139,7 +1139,15 @@ async function checkAuthentication() {
 async function loadUserData() {
   try {
     const result = await chrome.storage.local.get(['user']);
+    console.log('📊 DEBUG: Loading user data from storage:', result);
+    
     if (result.user) {
+      console.log('👤 DEBUG: User data found:', result.user);
+      console.log('📧 User email:', result.user.email);
+      console.log('👑 User isPremium:', result.user.isPremium);
+      console.log('🏷️ User tier:', result.user.tier);
+      console.log('📋 User subscription tier:', result.user.subscription?.tier);
+      
       const userStatusEl = document.getElementById('userStatus');
       const userNameEl = document.getElementById('userName');
       const userTierEl = document.getElementById('userTier');
@@ -1150,6 +1158,11 @@ async function loadUserData() {
         const displayName = result.user.profile?.displayName || result.user.name || result.user.email.split('@')[0];
         const tier = result.user.subscription?.tier || result.user.tier || 'free';
         const isPremium = result.user.isPremium || tier === 'premium';
+        
+        console.log('🎯 DEBUG: Final premium calculation:');
+        console.log('  - displayName:', displayName);
+        console.log('  - tier:', tier);
+        console.log('  - isPremium:', isPremium);
         
         userNameEl.textContent = displayName;
         userTierEl.textContent = isPremium ? 'Premium' : 'Free tier';
@@ -1310,27 +1323,130 @@ async function initializeMainApp() {
 
 // Handle upgrade button click
 function handleUpgradeClick() {
-  console.log('🚀 Upgrade button clicked - showing professional upgrade options');
+  console.log('🚀 Upgrade button clicked - redirecting to demo page');
   
-  // Use the professional upgrade handler
-  if (window.handleProfessionalUpgrade) {
-    window.handleProfessionalUpgrade();
-  } else {
-    // Fallback to simple Stripe redirect
-    const stripeUrl = 'https://buy.stripe.com/test_1234567890'; // Replace with your actual Stripe link
-    
-    chrome.tabs.create({
-      url: stripeUrl,
-      active: true
-    });
-    
-    window.ui.showNotification({
-      type: 'success',
-      message: 'Opening Stripe checkout...',
-      duration: 2000
-    });
-  }
+  // Redirect to demo upgrade page
+  window.open('https://example.com/upgrade', '_blank');
+  
+  console.log('✅ Redirected to demo upgrade page');
 }
+
+// Manual sign-in function for testing (bypasses OAuth)
+window.manualSignIn = function(email = 'poricfami@gmail.com') {
+  console.log('🔧 Manual sign-in for:', email);
+  
+  const testUser = {
+    id: 'manual-user-' + Date.now(),
+    email: email,
+    user_metadata: {
+      full_name: 'Fahmi'
+    }
+  };
+  
+  // Create user profile with premium status
+  const userProfile = {
+    id: testUser.id,
+    email: testUser.email,
+    name: testUser.user_metadata?.full_name || testUser.email.split('@')[0],
+    avatar_url: null,
+    tier: 'premium',
+    isPremium: true,
+    isLoggedIn: true,
+    loginDate: new Date().toISOString(),
+    lastActive: new Date().toISOString(),
+    profile: {
+      displayName: testUser.user_metadata?.full_name || testUser.email.split('@')[0],
+      firstName: testUser.user_metadata?.full_name?.split(' ')[0] || testUser.email.split('@')[0],
+      lastName: testUser.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
+      email: testUser.email,
+      avatar: null,
+      tags: [],
+      subscription: {
+        tier: 'premium',
+        status: 'active',
+        startDate: new Date().toISOString(),
+        features: ['customization', 'advanced_settings', 'priority_support']
+      }
+    },
+    preferences: {
+      theme: 'dark',
+      notifications: true,
+      autoUpdate: true
+    },
+    usage: {
+      totalSessions: 1,
+      lastLogin: new Date().toISOString(),
+      featuresUsed: ['customization', 'profiles']
+    }
+  };
+  
+  // Store user data
+  chrome.storage.local.set({
+    user: userProfile,
+    session: {
+      access_token: 'manual-token',
+      refresh_token: 'manual-refresh',
+      expires_at: Date.now() + 3600000
+    }
+  }).then(() => {
+    console.log('✅ Manual sign-in successful!');
+    console.log('👑 User is premium:', userProfile.isPremium);
+    console.log('🔄 Please refresh the popup to see changes');
+  });
+};
+
+// Debug function to check and fix premium status
+window.debugPremiumStatus = function() {
+  return new Promise(async (resolve) => {
+  console.log('🔍 DEBUG: Checking current premium status...');
+  
+  try {
+    // Get current user data
+    const result = await chrome.storage.local.get(['user']);
+    console.log('📊 Current user data:', result.user);
+    
+    if (result.user) {
+      console.log('📧 User email:', result.user.email);
+      console.log('👑 Current isPremium:', result.user.isPremium);
+      console.log('🏷️ Current tier:', result.user.tier);
+      console.log('📋 Subscription tier:', result.user.subscription?.tier);
+      
+      // Check if email matches premium list
+      const premiumUsers = ['poricfami@gmail.com'];
+      const emailMatch = premiumUsers.includes(result.user.email.toLowerCase());
+      console.log('🔍 Email matches premium list:', emailMatch);
+      
+      // If email matches but user is not premium, fix it
+      if (emailMatch && !result.user.isPremium) {
+        console.log('🔧 Fixing premium status...');
+        
+        result.user.isPremium = true;
+        result.user.tier = 'premium';
+        result.user.subscription.tier = 'premium';
+        result.user.subscription.status = 'active';
+        result.user.subscription.features = ['customization', 'advanced_settings', 'priority_support'];
+        
+        await chrome.storage.local.set({ user: result.user });
+        console.log('✅ Premium status fixed! Please refresh the popup.');
+        
+        resolve(true);
+      } else if (emailMatch && result.user.isPremium) {
+        console.log('✅ User is already premium - no fix needed');
+        resolve(true);
+      } else {
+        console.log('❌ Email not in premium list');
+        resolve(false);
+      }
+    } else {
+      console.log('❌ No user data found');
+      resolve(false);
+    }
+  } catch (error) {
+    console.error('❌ Error checking premium status:', error);
+    resolve(false);
+  }
+  });
+};
 
 // Handle logout
 async function handleLogoutClick() {

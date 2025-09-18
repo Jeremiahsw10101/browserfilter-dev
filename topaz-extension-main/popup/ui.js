@@ -561,14 +561,28 @@ function updateCustomizationState(isEnabled) {
   
   // Check if user is premium before enabling customization
   chrome.storage.local.get(['user']).then((result) => {
+    console.log('🔍 UI DEBUG: Checking premium status in updateCustomizationState');
+    console.log('📊 User data from storage:', result);
+    
     if (result.user) {
+      console.log('👤 User found:', result.user);
+      console.log('📧 User email:', result.user.email);
+      console.log('👑 User isPremium:', result.user.isPremium);
+      console.log('🏷️ User tier:', result.user.tier);
+      console.log('📋 Subscription tier:', result.user.subscription?.tier);
+      
       const isPremium = result.user.isPremium || result.user.subscription?.tier === 'premium';
+      console.log('✅ Final isPremium calculation:', isPremium);
       
       // If user is not premium, force disable customization
       if (!isPremium) {
         isEnabled = false;
         console.log('🔒 Customization disabled for free user');
+      } else {
+        console.log('✅ Customization enabled for premium user');
       }
+    } else {
+      console.log('❌ No user data found in storage');
     }
     
     // Get references to the UI elements
