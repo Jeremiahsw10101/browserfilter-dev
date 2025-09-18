@@ -1,0 +1,47 @@
+#!/bin/bash
+
+echo "🚀 Setting up Google OAuth for Topaz Extension"
+echo "=============================================="
+echo ""
+
+echo "📋 Step 1: Google Cloud Console Setup"
+echo "1. Go to: https://console.cloud.google.com/"
+echo "2. Create a new project or select existing one"
+echo "3. Go to: APIs & Services → Credentials"
+echo "4. Click: Create Credentials → OAuth client ID"
+echo "5. Choose: Web application"
+echo "6. Add these URLs:"
+echo "   - Authorized JavaScript origins: https://yourdomain.com (or localhost:3000 for testing)"
+echo "   - Authorized redirect URIs: https://giuarudxkyknysqmayfl.supabase.co/auth/v1/callback"
+echo "7. Copy the Client ID and Client Secret"
+echo ""
+
+echo "📋 Step 2: Supabase Dashboard Setup"
+echo "1. Go to: https://supabase.com/dashboard/project/giuarudxkyknysqmayfl"
+echo "2. Go to: Authentication → Providers"
+echo "3. Find: Google provider"
+echo "4. Toggle: Enable Google provider"
+echo "5. Paste your Google Client ID and Client Secret"
+echo "6. Save the configuration"
+echo ""
+
+echo "📋 Step 3: Test the Extension"
+echo "1. Reload the Chrome extension"
+echo "2. Click the extension icon"
+echo "3. Click 'Sign In with Google'"
+echo "4. Complete the OAuth flow"
+echo ""
+
+echo "🔧 Quick Test URLs:"
+echo "Supabase Project: https://giuarudxkyknysqmayfl.supabase.co"
+echo "Supabase Dashboard: https://supabase.com/dashboard/project/giuarudxkyknysqmayfl"
+echo "Google Cloud Console: https://console.cloud.google.com/"
+echo ""
+
+echo "⚠️  Common Issues:"
+echo "- Make sure Google OAuth consent screen is configured"
+echo "- Ensure redirect URI exactly matches: https://giuarudxkyknysqmayfl.supabase.co/auth/v1/callback"
+echo "- Check that Google+ API is enabled in Google Cloud Console"
+echo ""
+
+echo "✅ Once configured, your extension will have real Google authentication!"

@@ -2,6 +2,19 @@ async function initializePopup() {
   console.log('🚀 Initializing Topaz popup...');
   
   try {
+    // Check authentication first
+    console.log('🔐 Checking authentication...');
+    const isAuthenticated = await checkAuthentication();
+    
+    if (!isAuthenticated) {
+      console.log('❌ User not authenticated, showing auth page');
+      showAuthPage();
+      setupAuthEventListeners();
+      return;
+    }
+    
+    console.log('✅ User authenticated, proceeding with main app');
+    
     // Check if all required modules are available
     console.log('🔍 Checking module availability...');
     console.log('- window.ui:', !!window.ui);
@@ -25,6 +38,9 @@ async function initializePopup() {
     
     console.log('🔖 Setting version number from manifest...');
     setVersionNumber();
+    
+    console.log('👤 Loading user data...');
+    await loadUserData();
     
     console.log('🔧 Setting up event listeners...');
     setupEventListeners();
@@ -222,6 +238,18 @@ function setupEventListeners() {
   websitePills.forEach(pill => {
     pill.addEventListener('click', () => toggleWebsite(pill.dataset.website));
   });
+  
+  // Upgrade button
+  const upgradeButton = document.getElementById('upgradeButton');
+  if (upgradeButton) {
+    upgradeButton.addEventListener('click', handleUpgradeClick);
+  }
+  
+  // Logout button
+  const logoutButton = document.getElementById('logoutButton');
+  if (logoutButton) {
+    logoutButton.addEventListener('click', handleLogoutClick);
+  }
 }
 
 // Event handlers
@@ -1096,6 +1124,295 @@ window.removeTag = removeTag;
 // Debug: Check if DOM is ready
 console.log('📄 DOM Content State:', document.readyState);
 console.log('🌐 Document loaded:', document.readyState === 'complete');
+
+// Authentication functions
+async function checkAuthentication() {
+  try {
+    const result = await chrome.storage.local.get(['user', 'session']);
+    return !!(result.user && result.session);
+  } catch (error) {
+    console.error('Failed to check authentication:', error);
+    return false;
+  }
+}
+
+async function loadUserData() {
+  try {
+    const result = await chrome.storage.local.get(['user']);
+    if (result.user) {
+      const userStatusEl = document.getElementById('userStatus');
+      const userNameEl = document.getElementById('userName');
+      const userTierEl = document.getElementById('userTier');
+      const upgradeButtonEl = document.getElementById('upgradeButton');
+      
+      if (userStatusEl && userNameEl && userTierEl) {
+        // Display professional user information
+        const displayName = result.user.profile?.displayName || result.user.name || result.user.email.split('@')[0];
+        const tier = result.user.subscription?.tier || result.user.tier || 'free';
+        const isPremium = result.user.isPremium || tier === 'premium';
+        
+        userNameEl.textContent = displayName;
+        userTierEl.textContent = isPremium ? 'Premium' : 'Free tier';
+        userTierEl.className = isPremium ? 'user-tier premium' : 'user-tier free';
+        
+        userStatusEl.style.display = 'flex';
+        
+        // Show upgrade button for free tier users
+        if (upgradeButtonEl && !isPremium) {
+          upgradeButtonEl.style.display = 'block';
+        }
+        
+        console.log('👤 User loaded:', {
+          name: displayName,
+          email: result.user.email,
+          tier: tier,
+          isPremium: isPremium,
+          isLoggedIn: result.user.isLoggedIn
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load user data:', error);
+  }
+}
+
+function showAuthPage() {
+  const authPage = document.getElementById('authPage');
+  const mainPage = document.getElementById('mainPage');
+  const editPage = document.getElementById('editPage');
+  const userStatus = document.getElementById('userStatus');
+  
+  // Force hide everything immediately
+  if (mainPage) {
+    mainPage.style.display = 'none';
+    mainPage.style.visibility = 'hidden';
+  }
+  if (editPage) {
+    editPage.style.display = 'none';
+    editPage.style.visibility = 'hidden';
+  }
+  if (userStatus) {
+    userStatus.style.display = 'none';
+    userStatus.style.visibility = 'hidden';
+  }
+  
+  // Show only auth page
+  if (authPage) {
+    authPage.style.display = 'flex';
+    authPage.style.visibility = 'visible';
+  }
+}
+
+function showMainPage() {
+  const authPage = document.getElementById('authPage');
+  const mainPage = document.getElementById('mainPage');
+  
+  if (authPage && mainPage) {
+    authPage.style.display = 'none';
+    mainPage.style.display = 'flex';
+  }
+}
+
+function setupAuthEventListeners() {
+  const signInButton = document.getElementById('signInButton');
+  const authLoading = document.getElementById('authLoading');
+  const authError = document.getElementById('authError');
+  
+  if (signInButton) {
+    signInButton.addEventListener('click', async () => {
+      try {
+        // Show loading state
+        signInButton.style.display = 'none';
+        authLoading.style.display = 'flex';
+        authError.style.display = 'none';
+        
+        // Open auth window
+        const authUrl = chrome.runtime.getURL('auth.html');
+        await chrome.windows.create({
+          url: authUrl,
+          type: 'popup',
+          width: 400,
+          height: 500,
+          focused: true
+        });
+        
+        // Listen for auth success message
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+          if (message.type === 'AUTH_SUCCESS') {
+            // Hide auth page and show main page
+            showMainPage();
+            
+            // Load user data and initialize main app
+            loadUserData().then(() => {
+              // Re-initialize the main app
+              initializeMainApp();
+            });
+            
+            sendResponse({ success: true });
+          }
+        });
+        
+      } catch (error) {
+        console.error('Sign in error:', error);
+        authError.textContent = error.message || 'Failed to sign in. Please try again.';
+        authError.style.display = 'block';
+        authLoading.style.display = 'none';
+        signInButton.style.display = 'flex';
+      }
+    });
+  }
+}
+
+async function initializeMainApp() {
+  try {
+    // Check if all required modules are available
+    if (!window.ui || !window.appState || !window.backgroundAPI) {
+      throw new Error('Required modules not loaded');
+    }
+    
+    // Cache DOM elements
+    window.ui.cacheElements();
+    
+    // Set version number
+    setVersionNumber();
+    
+    // Set up event listeners
+    setupEventListeners();
+    
+    // Set up message listeners
+    setupMessageListeners();
+    
+    // Load initial data
+    await loadInitialData();
+    
+    // Notify background popup opened
+    await notifyPopupOpened();
+    
+    // Start heartbeat system
+    startHeartbeatSystem();
+    
+    // Render initial view
+    window.ui.renderCurrentView();
+    
+    // Sync preview button
+    await syncPreviewButtonState();
+    
+    console.log('✅ Main app initialized successfully');
+    
+  } catch (error) {
+    console.error('❌ Failed to initialize main app:', error);
+    showError('Failed to initialize app: ' + error.message);
+  }
+}
+
+// Handle upgrade button click
+function handleUpgradeClick() {
+  console.log('🚀 Upgrade button clicked');
+  
+  // Show upgrade dialog
+  window.ui.showDialog({
+    title: 'Upgrade to Premium',
+    content: `
+      <div style="text-align: center; padding: 20px;">
+        <div style="font-size: 48px; margin-bottom: 16px;">⭐</div>
+        <h3 style="color: #ff9823; margin-bottom: 16px;">Unlock Premium Features</h3>
+        <div style="text-align: left; margin-bottom: 20px;">
+          <div style="margin-bottom: 8px;">✅ Advanced AI-powered filtering</div>
+          <div style="margin-bottom: 8px;">✅ Unlimited custom profiles</div>
+          <div style="margin-bottom: 8px;">✅ Priority support</div>
+          <div style="margin-bottom: 8px;">✅ Sync across all devices</div>
+          <div style="margin-bottom: 8px;">✅ Analytics dashboard</div>
+        </div>
+        <div style="background: #252525; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+          <div style="font-size: 24px; font-weight: bold; color: #ff9823;">$9.99/month</div>
+          <div style="font-size: 14px; color: #999;">Cancel anytime</div>
+        </div>
+        <p style="font-size: 12px; color: #666; margin: 0;">
+          Coming soon! We're working on premium features.
+        </p>
+      </div>
+    `,
+    buttons: [
+      {
+        text: 'Maybe Later',
+        onClick: () => true
+      },
+      {
+        text: 'Get Premium',
+        primary: true,
+        onClick: () => {
+          // For now, just show a message
+          window.ui.showNotification({
+            type: 'info',
+            message: 'Premium features coming soon! Stay tuned.',
+            duration: 3000
+          });
+          return true;
+        }
+      }
+    ]
+  });
+}
+
+// Handle logout
+async function handleLogoutClick() {
+  console.log('🚪 Logout button clicked');
+  
+  try {
+    // Clear user data from storage
+    await chrome.storage.local.remove(['user', 'session']);
+    
+    // Immediately hide ALL pages and elements
+    const userStatusEl = document.getElementById('userStatus');
+    const mainPageEl = document.getElementById('mainPage');
+    const editPageEl = document.getElementById('editPage');
+    const authPageEl = document.getElementById('authPage');
+    
+    // Force hide everything immediately
+    if (userStatusEl) {
+      userStatusEl.style.display = 'none';
+      userStatusEl.style.visibility = 'hidden';
+    }
+    if (mainPageEl) {
+      mainPageEl.style.display = 'none';
+      mainPageEl.style.visibility = 'hidden';
+    }
+    if (editPageEl) {
+      editPageEl.style.display = 'none';
+      editPageEl.style.visibility = 'hidden';
+    }
+    
+    // Show ONLY the auth page
+    if (authPageEl) {
+      authPageEl.style.display = 'flex';
+      authPageEl.style.visibility = 'visible';
+    }
+    
+    // Force a small delay to ensure DOM updates
+    setTimeout(() => {
+      // Double-check everything is hidden
+      if (mainPageEl) mainPageEl.style.display = 'none';
+      if (editPageEl) editPageEl.style.display = 'none';
+      if (userStatusEl) userStatusEl.style.display = 'none';
+      if (authPageEl) authPageEl.style.display = 'flex';
+    }, 100);
+    
+    // Show confirmation
+    window.ui.showNotification({
+      type: 'success',
+      message: 'Signed out successfully',
+      duration: 2000
+    });
+    
+  } catch (error) {
+    console.error('Logout error:', error);
+    window.ui.showNotification({
+      type: 'error',
+      message: 'Failed to sign out. Please try again.',
+      duration: 3000
+    });
+  }
+}
 
 // Initialize popup immediately since scripts are loaded at end of body
 console.log('🎬 Starting popup initialization...');

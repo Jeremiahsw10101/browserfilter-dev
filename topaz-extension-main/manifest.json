@@ -43,7 +43,7 @@
       "128": "icons/icon-128.png"
     }
   },
-  "permissions": ["storage", "tabs", "scripting"],
+  "permissions": ["storage", "tabs", "scripting", "identity"],
   "host_permissions": [
     "https://www.youtube.com/*",
     "https://youtube.com/*",
@@ -61,7 +61,10 @@
         "content/video-effects.css",
         "content/loading.html",
         "content/config.json",
-        "topaz.svg"
+        "topaz.svg",
+        "auth.html",
+        "auth.js",
+        "supabase-client.js"
       ],
       "matches": ["http://*/*", "https://*/*"]
     }

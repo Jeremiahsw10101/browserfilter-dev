@@ -233,6 +233,190 @@ body {
     transform: scale(0.95);
 }
 
+/* User Status in Top Bar */
+.user-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+}
+
+.user-name {
+    font-size: var(--font-size-xs);
+    color: var(--text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.user-tier-container {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.user-tier {
+    font-size: var(--font-size-xs);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+}
+
+.user-tier.premium {
+    color: #ff9823;
+    background: linear-gradient(135deg, #ff9823, #ff6b35);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+}
+
+.user-tier.free {
+    color: #999;
+}
+
+.upgrade-button {
+    background: #ff9823;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: 8px;
+}
+
+.upgrade-button:hover {
+    background: #e6891a;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(255, 152, 35, 0.3);
+}
+
+.upgrade-button:active {
+    transform: translateY(0);
+}
+
+.logout-button {
+    background: transparent;
+    color: #999;
+    border: 1px solid #333;
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: 6px;
+}
+
+.logout-button:hover {
+    background: #333;
+    color: white;
+    border-color: #555;
+}
+
+/* Authentication Page Styles */
+.auth-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    padding: var(--space-4xl);
+}
+
+.auth-logo {
+    width: 60px;
+    height: 60px;
+    margin-bottom: var(--space-4xl);
+}
+
+.auth-title {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+    margin-bottom: var(--space-sm);
+}
+
+.auth-subtitle {
+    font-size: var(--font-size-md);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4xl);
+    line-height: var(--line-height-relaxed);
+}
+
+.auth-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2xl);
+    width: 100%;
+    max-width: 280px;
+    padding: var(--space-3xl) var(--space-4xl);
+    background: white;
+    color: #333;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: var(--transition-all);
+    margin-bottom: var(--space-3xl);
+}
+
+.auth-button:hover {
+    background: #f5f5f5;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.auth-button:active {
+    transform: translateY(0);
+}
+
+.google-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.auth-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-3xl);
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border-secondary);
+    border-top: 2px solid var(--color-primary);
+    border-radius: var(--radius-full);
+    animation: spin 1s linear infinite;
+}
+
+.auth-error {
+    color: var(--color-error);
+    background: var(--color-error-bg);
+    padding: var(--space-2xl);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-3xl);
+    font-size: var(--font-size-sm);
+    border: 1px solid var(--color-error);
+}
+
+.auth-status {
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    margin-top: var(--space-2xl);
+}
+
 /* COMMENTED OUT: Auth functionality disabled
 .settings-icon {
     background: none;
