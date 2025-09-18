@@ -1,6 +1,35 @@
 // Simple UI Rendering Functions
 // Replaces the complex Component hierarchy and UIController
 
+
+
+function renderCurrentView() {
+  const { state } = window.appState;
+
+  const loginView = document.getElementById('loginView');
+  const mainPage = document.getElementById('mainPage');
+
+  if (state.isLoggedIn) {
+    // User IS logged in: show the main app, hide the login screen
+    loginView.style.display = 'none';
+    mainPage.classList.remove('hidden');
+
+    // Render the main app's components
+    renderExtensionToggle();
+    renderStats();
+    if (state.currentView === 'main') {
+      showMainView();
+    } else if (state.currentView === 'edit') {
+      showEditView();
+    }
+  } else {
+    // User IS NOT logged in: show the login screen, hide the main app
+    loginView.style.display = 'flex';
+    mainPage.classList.add('hidden');
+  }
+}
+
+
 // UI Element references (cached for performance)
 const elements = {
   // Main view elements
@@ -530,15 +559,27 @@ function updateCustomizationState(isEnabled) {
   const chipSystem = elements.simpleModeSection?.querySelector('.simple-chip-system');
   if (!chipSystem) return;
   
-  // Get references to the UI elements
-  const tabButtons = chipSystem.querySelector('.tab-buttons');
-  const tabContent = chipSystem.querySelector('.tab-content');
-  const addItemContainer = chipSystem.querySelector('.add-item-container');
-  const addItemInput = chipSystem.querySelector('.add-item-input');
-  const saveButton = chipSystem.querySelector('.save-button');
-  const resetButton = chipSystem.querySelector('.reset-button');
-  
-  if (isEnabled) {
+  // Check if user is premium before enabling customization
+  chrome.storage.local.get(['user']).then((result) => {
+    if (result.user) {
+      const isPremium = result.user.isPremium || result.user.subscription?.tier === 'premium';
+      
+      // If user is not premium, force disable customization
+      if (!isPremium) {
+        isEnabled = false;
+        console.log('🔒 Customization disabled for free user');
+      }
+    }
+    
+    // Get references to the UI elements
+    const tabButtons = chipSystem.querySelector('.tab-buttons');
+    const tabContent = chipSystem.querySelector('.tab-content');
+    const addItemContainer = chipSystem.querySelector('.add-item-container');
+    const addItemInput = chipSystem.querySelector('.add-item-input');
+    const saveButton = chipSystem.querySelector('.save-button');
+    const resetButton = chipSystem.querySelector('.reset-button');
+    
+    if (isEnabled) {
     // Enable customization UI
     if (tabButtons) {
       tabButtons.style.display = '';
@@ -661,6 +702,7 @@ function updateCustomizationState(isEnabled) {
       chip.style.cursor = 'default';
     });
   }
+  });
 }
 
 // Set active tab in simple mode

@@ -98,7 +98,7 @@ class SupabaseClient {
       id: 'test-user-' + Date.now(),
       email: 'test@example.com',
       user_metadata: {
-        full_name: 'Demo User',
+        full_name: 'Fahmi',
         avatar_url: null
       }
     };
@@ -164,15 +164,32 @@ class SupabaseClient {
     }
   }
 
+  // Check if a specific user should be premium (for demo purposes)
+  isPremiumUser(user) {
+    // Make specific users premium for demo
+    const premiumUsers = [
+      'poricfami@gmail.com', // Premium user
+    ];
+    
+    // Also check for premium tags in user metadata
+    const hasPremiumTag = user.user_metadata?.tags?.includes('premium') || 
+                         user.user_metadata?.subscription?.tier === 'premium' ||
+                         user.user_metadata?.isPremium === true;
+    
+    return premiumUsers.includes(user.email.toLowerCase()) || hasPremiumTag;
+  }
+
   // Enhanced user data with professional labels
   async createUserProfile(user, session) {
+    const isPremium = this.isPremiumUser(user);
+    
     return {
       id: user.id,
       email: user.email,
       name: user.user_metadata?.full_name || user.email.split('@')[0],
       avatar_url: user.user_metadata?.avatar_url,
-      tier: 'free', // Default tier
-      isPremium: false,
+      tier: isPremium ? 'premium' : 'free',
+      isPremium: isPremium,
       isLoggedIn: true,
       loginDate: new Date().toISOString(),
       lastActive: new Date().toISOString(),
@@ -182,13 +199,23 @@ class SupabaseClient {
         lastName: user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
         email: user.email,
         avatar: user.user_metadata?.avatar_url,
-        verified: user.email_confirmed_at ? true : false
+        tags: user.user_metadata?.tags || [],
+        subscription: {
+          tier: isPremium ? 'premium' : 'free',
+          status: isPremium ? 'active' : 'inactive',
+          startDate: isPremium ? new Date().toISOString() : null,
+          features: isPremium ? ['customization', 'advanced_settings', 'priority_support'] : ['basic_filtering']
+        }
       },
-      subscription: {
-        tier: 'free',
-        status: 'active',
-        startDate: new Date().toISOString(),
-        features: ['basic_filtering', 'limited_profiles']
+      preferences: {
+        theme: 'dark',
+        notifications: true,
+        autoUpdate: true
+      },
+      usage: {
+        totalSessions: 1,
+        lastLogin: new Date().toISOString(),
+        featuresUsed: isPremium ? ['customization', 'profiles'] : ['basic_filtering']
       }
     };
   }

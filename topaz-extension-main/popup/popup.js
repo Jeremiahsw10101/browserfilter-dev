@@ -1162,6 +1162,9 @@ async function loadUserData() {
           upgradeButtonEl.style.display = 'block';
         }
         
+        // Setup premium lock for customization toggle
+        setupCustomizationPremiumLock(!isPremium);
+        
         console.log('👤 User loaded:', {
           name: displayName,
           email: result.user.email,
@@ -1307,51 +1310,26 @@ async function initializeMainApp() {
 
 // Handle upgrade button click
 function handleUpgradeClick() {
-  console.log('🚀 Upgrade button clicked');
+  console.log('🚀 Upgrade button clicked - showing professional upgrade options');
   
-  // Show upgrade dialog
-  window.ui.showDialog({
-    title: 'Upgrade to Premium',
-    content: `
-      <div style="text-align: center; padding: 20px;">
-        <div style="font-size: 48px; margin-bottom: 16px;">⭐</div>
-        <h3 style="color: #ff9823; margin-bottom: 16px;">Unlock Premium Features</h3>
-        <div style="text-align: left; margin-bottom: 20px;">
-          <div style="margin-bottom: 8px;">✅ Advanced AI-powered filtering</div>
-          <div style="margin-bottom: 8px;">✅ Unlimited custom profiles</div>
-          <div style="margin-bottom: 8px;">✅ Priority support</div>
-          <div style="margin-bottom: 8px;">✅ Sync across all devices</div>
-          <div style="margin-bottom: 8px;">✅ Analytics dashboard</div>
-        </div>
-        <div style="background: #252525; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-          <div style="font-size: 24px; font-weight: bold; color: #ff9823;">$9.99/month</div>
-          <div style="font-size: 14px; color: #999;">Cancel anytime</div>
-        </div>
-        <p style="font-size: 12px; color: #666; margin: 0;">
-          Coming soon! We're working on premium features.
-        </p>
-      </div>
-    `,
-    buttons: [
-      {
-        text: 'Maybe Later',
-        onClick: () => true
-      },
-      {
-        text: 'Get Premium',
-        primary: true,
-        onClick: () => {
-          // For now, just show a message
-          window.ui.showNotification({
-            type: 'info',
-            message: 'Premium features coming soon! Stay tuned.',
-            duration: 3000
-          });
-          return true;
-        }
-      }
-    ]
-  });
+  // Use the professional upgrade handler
+  if (window.handleProfessionalUpgrade) {
+    window.handleProfessionalUpgrade();
+  } else {
+    // Fallback to simple Stripe redirect
+    const stripeUrl = 'https://buy.stripe.com/test_1234567890'; // Replace with your actual Stripe link
+    
+    chrome.tabs.create({
+      url: stripeUrl,
+      active: true
+    });
+    
+    window.ui.showNotification({
+      type: 'success',
+      message: 'Opening Stripe checkout...',
+      duration: 2000
+    });
+  }
 }
 
 // Handle logout
@@ -1418,3 +1396,120 @@ async function handleLogoutClick() {
 console.log('🎬 Starting popup initialization...');
 initializePopup();
 
+
+
+// Simple premium lock for customization toggle
+function setupCustomizationPremiumLock(isFreeUser) {
+  const customizationContainer = document.querySelector('.customization-toggle-container');
+  const customizationToggle = document.getElementById('simpleCustomizationToggle');
+  
+  if (customizationContainer && customizationToggle) {
+    if (isFreeUser) {
+      // Show toggle but make it unclickable and locked
+      customizationContainer.style.display = '';
+      customizationContainer.classList.add('premium-locked');
+      
+      // Lock the toggle (set to false/off and disabled)
+      customizationToggle.checked = false;
+      customizationToggle.disabled = true;
+      
+      // Update the label to show it's locked
+      const customizationLabel = customizationContainer.querySelector('.customization-label');
+      if (customizationLabel) {
+        customizationLabel.textContent = 'Enable Customization (Premium)';
+        customizationLabel.style.color = '#999';
+      }
+      
+      // Remove all existing event listeners to prevent toggling
+      const newToggle = customizationToggle.cloneNode(true);
+      customizationToggle.parentNode.replaceChild(newToggle, customizationToggle);
+      
+      // Add click handler for upgrade prompt
+      customizationContainer.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Remove any existing popup first
+        const existingPopup = document.querySelector('.upgrade-popup');
+        if (existingPopup) {
+          existingPopup.remove();
+        }
+        
+        // Simple upgrade prompt - smaller and closable
+        const upgradePrompt = document.createElement('div');
+        upgradePrompt.className = 'upgrade-popup';
+        upgradePrompt.style.cssText = `
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: #1a1a1a;
+          border: 1px solid #333;
+          border-radius: 8px;
+          padding: 15px;
+          z-index: 10000;
+          max-width: 250px;
+          text-align: center;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        `;
+        
+        upgradePrompt.innerHTML = `
+          <div style="color: #ff9823; font-size: 16px; margin-bottom: 8px;">🔒 Premium</div>
+          <div style="color: #ccc; margin-bottom: 12px; font-size: 12px;">Customization requires Premium</div>
+          <button id="upgradeBtn" style="background: #ff9823; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-right: 8px; font-size: 12px;">Upgrade</button>
+          <button id="closeBtn" style="background: #333; color: #ccc; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Close</button>
+        `;
+        
+        document.body.appendChild(upgradePrompt);
+        
+        // Close button - improved
+        const closeBtn = upgradePrompt.querySelector('#closeBtn');
+        closeBtn.onclick = (e) => {
+          e.stopPropagation();
+          upgradePrompt.remove();
+        };
+        
+        // Upgrade button - improved
+        const upgradeBtn = upgradePrompt.querySelector('#upgradeBtn');
+        upgradeBtn.onclick = (e) => {
+          e.stopPropagation();
+          upgradePrompt.remove();
+          // Redirect to demo upgrade page
+          window.open('https://example.com/upgrade', '_blank');
+        };
+        
+        // Close on outside click - improved
+        upgradePrompt.onclick = (e) => {
+          if (e.target === upgradePrompt) {
+            upgradePrompt.remove();
+          }
+        };
+        
+        // Close on Escape key
+        const handleEscape = (e) => {
+          if (e.key === 'Escape') {
+            upgradePrompt.remove();
+            document.removeEventListener('keydown', handleEscape);
+          }
+        };
+        document.addEventListener('keydown', handleEscape);
+      });
+      
+      console.log('🔒 Customization toggle locked for free user');
+    } else {
+      // Show the customization toggle for premium users
+      customizationContainer.style.display = '';
+      customizationContainer.classList.remove('premium-locked');
+      customizationToggle.disabled = false;
+      
+      // Restore the normal label for premium users
+      const customizationLabel = customizationContainer.querySelector('.customization-label');
+      if (customizationLabel) {
+        customizationLabel.textContent = 'Enable Customization';
+        customizationLabel.style.color = '';
+      }
+      
+      console.log('✅ Customization toggle unlocked for premium user');
+    }
+  }
+}

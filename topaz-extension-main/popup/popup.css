@@ -3299,3 +3299,55 @@ body {
     color: var(--text-disabled);
     border-color: var(--border-primary);
 }
+
+
+/* Premium Locked Toggle */
+.customization-toggle-container.premium-locked {
+    position: relative;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.customization-toggle-container.premium-locked .toggle-switch {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.customization-toggle-container.premium-locked::after {
+    content: '🔒';
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    animation: pulse-lock 2s infinite;
+}
+
+@keyframes pulse-lock {
+    0% { opacity: 0.5; transform: translateY(-50%) scale(1); }
+    50% { opacity: 1; transform: translateY(-50%) scale(1.1); }
+    100% { opacity: 0.5; transform: translateY(-50%) scale(1); }
+}
+
+.customization-toggle-container.premium-locked:hover {
+    opacity: 0.8;
+}
+
+.customization-toggle-container.premium-locked:hover::after {
+    animation: bounce-lock 0.5s ease-in-out;
+}
+
+@keyframes bounce-lock {
+    0%, 100% { transform: translateY(-50%); }
+    50% { transform: translateY(-60%); }
+}
+
+/* Simple premium lock for customization toggle */
+.customization-toggle-container.premium-locked {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.customization-toggle-container.premium-locked:hover {
+    opacity: 0.7;
+}

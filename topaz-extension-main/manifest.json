@@ -64,7 +64,8 @@
         "topaz.svg",
         "auth.html",
         "auth.js",
-        "supabase-client.js"
+        "supabase-client.js",
+        "stripe-config.js"
       ],
       "matches": ["http://*/*", "https://*/*"]
     }
