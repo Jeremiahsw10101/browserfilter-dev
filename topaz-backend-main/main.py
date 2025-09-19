@@ -21,6 +21,11 @@ from supabase import create_client, Client
 # HTTP requests
 import requests
 
+# Import subscription modules
+from subscription_routes import router as subscription_router
+from stripe_webhooks import router as webhook_router
+from stripe_config import is_stripe_configured
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -98,6 +103,7 @@ async def startup_event():
     logger.info(f"📄 Prompts loaded: {len(prompts_data)} patterns")
     logger.info(f"🔑 OpenAI configured: {OPENAI_HEADERS is not None}")
     logger.info(f"🗄️ Supabase configured: {supabase is not None}")
+    logger.info(f"💳 Stripe configured: {is_stripe_configured()}")
     logger.info("✅ Startup complete!")
 
 # WebSocket connection manager
@@ -210,6 +216,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include subscription and webhook routers
+app.include_router(subscription_router)
+app.include_router(webhook_router)
 
 # AUTH0_CLIENT_ID = os.getenv("AUTH0_CLIENT_ID")
 # AUTH0_CLIENT_SECRET = os.getenv("AUTH0_SECRET")
@@ -953,8 +963,9 @@ async def analytics_frontend(request: Request):
                     </div>
 
                     <div class="activity-section">
-                        <h2 class="section-title">Recent Activity</h2>
-                        ${{blockedItems.slice(0, 10).map(item => `
+                        <h2 class="section-title">All Blocked Items (${{blockedItems.length}} total)</h2>
+                        <div style="max-height: 400px; overflow-y: auto; border: 1px solid #333; border-radius: 8px; padding: 10px;">
+                        ${{blockedItems.map(item => `
                             <div class="activity-item">
                                 <div class="activity-text">
                                     <div style="font-weight: 500; margin-bottom: 4px;">
@@ -973,6 +984,7 @@ async def analytics_frontend(request: Request):
                                 <span class="activity-count">${{item.count}} blocked</span>
                             </div>
                         `).join('')}}
+                        </div>
                     </div>
                 `;
             }}
